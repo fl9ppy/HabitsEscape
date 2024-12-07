@@ -1,0 +1,19 @@
+# config.py
+
+# Window dimensions
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 800
+
+# Colors
+BACKGROUND_COLOR = (50, 50, 50)
+BUTTON_COLOR = (100, 200, 100)
+HOVER_COLOR = (150, 250, 150)
+TEXT_COLOR = (0, 0, 0)
+
+# Button dimensions
+BUTTON_WIDTH = 200
+BUTTON_HEIGHT = 80
+BUTTON_SPACING = 20
+
+# Font sizes
+FONT_SIZE = 50
