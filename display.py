@@ -2,16 +2,15 @@ import pygame
 
 TEXT_COLOR = (255, 255, 255)
 
-def draw_obstacles(screen, obstacles, tile_size):
-    """Draw obstacles."""
-    for x, y in obstacles:
-        pygame.draw.rect(screen, (255, 255, 255), (x, y, tile_size, tile_size))
+def draw_obstacles(screen, obstacles, building_image):
+    """Draw all obstacles using the building image."""
+    for obstacle in obstacles:
+        screen.blit(building_image, (obstacle[0], obstacle[1]))
 
-def draw_enemies(screen, enemies, enemy_size, color):
-    """Draw all enemies on the screen."""
+def draw_enemies(screen, enemies, enemy_size, enemy_image):
+    """Draw all enemies using the enemy image."""
     for enemy in enemies:
-        x, y = enemy["pos"]  # Access the position stored in the "pos" field
-        pygame.draw.rect(screen, color, (x, y, enemy_size, enemy_size))
+        screen.blit(enemy_image, (enemy["pos"][0], enemy["pos"][1]))
 
 def display_room_count(screen, count, font):
     """Display the room count."""

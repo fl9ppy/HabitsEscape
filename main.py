@@ -12,22 +12,18 @@ from display import draw_obstacles, draw_enemies, display_room_count, display_hi
 # Constants
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 800
-PLAYER_SIZE = 50
+PLAYER_SIZE = 50  # Logical size for player (collision box)
 ENEMY_SIZE = 40
-BACKGROUND_COLOR = (0, 0, 0)
-PLAYER_COLOR = (255, 0, 0)
-ENEMY_COLOR = (0, 0, 255)
-DOOR_COLOR = (0, 255, 0)
-HEALTH_COLOR = (255, 255, 255)
 TILE_SIZE = 100
+DOOR_SIZE = 100
 SPACING = 120
 OBSTACLE_COUNT = 25
 EDGE_BUFFER = 100
 ENEMY_COUNT = 5
-ENEMY_SPEED = 2
 PLAYER_HEALTH = 100
 ROOM_COUNT_FILE = "room_count.txt"
 DAMAGE_COOLDOWN = 1000  # 1000 milliseconds (1 second)
+HEALTH_COLOR = (255, 255, 255)
 
 def load_high_score(file_path):
     """Load only the high score from the file."""
@@ -55,6 +51,20 @@ def main():
     pygame.display.set_caption("Room Counter Game")
     font = pygame.font.Font(None, 36)
 
+    # Load images
+    background_image = pygame.image.load("assets/background.jpg")
+    player_image = pygame.image.load("assets/ford.png")
+    enemy_image = pygame.image.load("assets/beer.png")
+    door_image = pygame.image.load("assets/cigs.png")
+    building_image = pygame.image.load("assets/building1.png")
+
+    # Scale images
+    background_image = pygame.transform.scale(background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))  # Fit the window
+    scaled_player_image = pygame.transform.scale(player_image, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))  # Larger player image
+    enemy_image = pygame.transform.scale(enemy_image, (ENEMY_SIZE, ENEMY_SIZE))
+    door_image = pygame.transform.scale(door_image, (DOOR_SIZE, DOOR_SIZE))
+    building_image = pygame.transform.scale(building_image, (TILE_SIZE, TILE_SIZE))
+
     # Reset the room count to 0 for this session
     room_count = 0
 
@@ -72,7 +82,7 @@ def main():
     # Generate initial layout
     obstacles = generate_building_obstacles(OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER)
     player_pos = get_valid_starting_position(obstacles, PLAYER_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE)
-    door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE, EDGE_BUFFER, TILE_SIZE)
+    door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, DOOR_SIZE, EDGE_BUFFER, TILE_SIZE)
     enemies = generate_enemy_positions(obstacles, ENEMY_COUNT, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE)
     obstacles = ensure_path(player_pos, door_pos, obstacles, TILE_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE)
 
@@ -100,9 +110,7 @@ def main():
 
         # Player attack logic
         is_attacking = keys[pygame.K_SPACE]
-        attack_color = (255, 255, 0)
         if is_attacking:
-            player_color = attack_color
             attack_range = pygame.Rect(
                 player_pos[0] - 20, player_pos[1] - 20,
                 PLAYER_SIZE + 40, PLAYER_SIZE + 40
@@ -113,8 +121,6 @@ def main():
                     enemy["health"] -= 10
                     if enemy["health"] <= 0:
                         enemies.remove(enemy)
-        else:
-            player_color = PLAYER_COLOR
 
         # Move enemies using A* pathfinding
         move_enemies_toward_player(
@@ -131,13 +137,13 @@ def main():
                     last_damage_time = current_time
 
         # Check if the player touches the door
-        door_rect = pygame.Rect(*door_pos, PLAYER_SIZE, PLAYER_SIZE)
+        door_rect = pygame.Rect(*door_pos, DOOR_SIZE, DOOR_SIZE)
         if player_rect.colliderect(door_rect) and not enemies:
             # Transport to a new room
             room_count += 1
             obstacles = generate_building_obstacles(OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER)
             player_pos = get_valid_starting_position(obstacles, PLAYER_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE)
-            door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE, EDGE_BUFFER, TILE_SIZE)
+            door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, DOOR_SIZE, EDGE_BUFFER, TILE_SIZE)
             enemies = generate_enemy_positions(obstacles, ENEMY_COUNT, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE)
             obstacles = ensure_path(player_pos, door_pos, obstacles, TILE_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE)
 
@@ -147,12 +153,14 @@ def main():
             running = False
 
         # Rendering
-        screen.fill(BACKGROUND_COLOR)
-        draw_obstacles(screen, obstacles, TILE_SIZE)
-        draw_enemies(screen, enemies, ENEMY_SIZE, ENEMY_COLOR)
-        pygame.draw.rect(screen, player_color, (*player_pos, PLAYER_SIZE, PLAYER_SIZE))
+        screen.blit(background_image, (0, 0))  # Draw the background image
+        draw_obstacles(screen, obstacles, building_image)  # Use images for buildings
+        draw_enemies(screen, enemies, ENEMY_SIZE, enemy_image)  # Use images for enemies
+        # Render the player (center the larger image on the logical hitbox)
+        scaled_image_offset = (PLAYER_SIZE // 2)
+        screen.blit(scaled_player_image, (player_pos[0] - scaled_image_offset, player_pos[1] - scaled_image_offset))
         if not enemies:
-            pygame.draw.rect(screen, DOOR_COLOR, (*door_pos, PLAYER_SIZE, PLAYER_SIZE))  # Unlock door
+            screen.blit(door_image, (door_pos[0], door_pos[1]))  # Door image
         display_room_count(screen, room_count, font)
         display_high_score(screen, high_score, font)
         display_health(screen, player_health, font)
