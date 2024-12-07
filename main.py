@@ -20,6 +20,7 @@ SPACING = 150
 OBSTACLE_COUNT = 12
 EDGE_BUFFER = 100
 ENEMY_COUNT = 5
+PLAYER_HEALTH = 100
 ROOM_COUNT_FILE = "room_count.txt"
 DAMAGE_COOLDOWN = 1000  # Milliseconds
 HIT_ANIMATION_DURATION = 200  # Duration for player hit animation in milliseconds
@@ -62,10 +63,16 @@ def main():
         pygame.image.load("assets/building3.png")
     ]
 
+    # Create mirrored versions of the player images
+    player_image_mirror = pygame.transform.flip(player_image, True, False)
+    player_image_mirror_hit = pygame.transform.flip(player_image_hit, True, False)
+
     # Scale images
     background_image = pygame.transform.scale(background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))
     player_image = pygame.transform.scale(player_image, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     player_image_hit = pygame.transform.scale(player_image_hit, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image_mirror = pygame.transform.scale(player_image_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image_mirror_hit = pygame.transform.scale(player_image_mirror_hit, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     enemy_image = pygame.transform.scale(enemy_image, (ENEMY_SIZE, ENEMY_SIZE))
     enemy_image_hit = pygame.transform.scale(enemy_image_hit, (ENEMY_SIZE, ENEMY_SIZE))
     door_image = pygame.transform.scale(door_image, (DOOR_SIZE, DOOR_SIZE))
@@ -78,17 +85,18 @@ def main():
     move_speed = 7
     running = True
 
+    player_level_multiplier = 1
+    player_health = 100 * player_level_multiplier
+    player_damage = 50 * player_level_multiplier
     last_damage_time = 0
     player_last_hit_time = 0  # Initialize player hit time
+    player_facing = "right"  # Default facing direction
 
     obstacles = generate_building_obstacles(
         OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images
     )
-    player_level_multiplier = 1
-    player_health = 100 * player_level_multiplier
     player_pos = get_valid_starting_position(obstacles, PLAYER_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE)
     player_rect = pygame.Rect(player_pos[0], player_pos[1], PLAYER_SIZE, PLAYER_SIZE)
-    player_damage = 50 * player_level_multiplier
     door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, DOOR_SIZE, EDGE_BUFFER, TILE_SIZE)
     enemies = generate_enemy_positions(
         obstacles, ENEMY_COUNT, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE, 100  # Initial health
@@ -105,10 +113,16 @@ def main():
         new_player_pos = player_pos[:]
 
         # Player movement logic
-        if keys[pygame.K_LEFT]: new_player_pos[0] -= move_speed
-        if keys[pygame.K_RIGHT]: new_player_pos[0] += move_speed
-        if keys[pygame.K_UP]: new_player_pos[1] -= move_speed
-        if keys[pygame.K_DOWN]: new_player_pos[1] += move_speed
+        if keys[pygame.K_LEFT]:
+            new_player_pos[0] -= move_speed
+            player_facing = "left"
+        if keys[pygame.K_RIGHT]:
+            new_player_pos[0] += move_speed
+            player_facing = "right"
+        if keys[pygame.K_UP]:
+            new_player_pos[1] -= move_speed
+        if keys[pygame.K_DOWN]:
+            new_player_pos[1] += move_speed
 
         collisions = [pygame.Rect(o[0], o[1], o[2], o[3]) for o in obstacles]
         if pygame.Rect(new_player_pos[0], new_player_pos[1], PLAYER_SIZE, PLAYER_SIZE).collidelist(collisions) == -1:
@@ -163,7 +177,7 @@ def main():
 
             # Scale enemy stats
             scaled_enemy_count = ENEMY_COUNT + (room_count // 3)  # Increase enemies every 3 rooms
-            scaled_enemy_health = 100 * enemy_level_multiplier  # Increase health by 10 per room
+            scaled_enemy_health = 100 * enemy_level_multiplier   # Increase health by 10 per room
 
             print(f"Entering Room {room_count}")
             print(f"Enemy Count: {scaled_enemy_count}, Enemy Health: {scaled_enemy_health}")
@@ -190,10 +204,16 @@ def main():
                 screen.blit(enemy_image, (enemy["pos"][0], enemy["pos"][1]))  # Normal skin
         if current_time - player_last_hit_time <= HIT_ANIMATION_DURATION:
             # Render hitting skin
-            screen.blit(player_image_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+            if player_facing == "left":
+                screen.blit(player_image_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+            else:
+                screen.blit(player_image_mirror_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
         else:
-            # Render normal skin
-            screen.blit(player_image, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+            # Render idle skin
+            if player_facing == "left":
+                screen.blit(player_image, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+            else:
+                screen.blit(player_image_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
         if not enemies:
             screen.blit(door_image, (door_pos[0], door_pos[1]))  # Door image
         display_health(screen, player_health, font)
