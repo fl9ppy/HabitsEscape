@@ -2,10 +2,10 @@ import pygame
 
 TEXT_COLOR = (255, 255, 255)
 
-def draw_obstacles(screen, obstacles, building_image):
-    """Draw all obstacles using the building image."""
-    for obstacle in obstacles:
-        screen.blit(building_image, (obstacle[0], obstacle[1]))
+def draw_obstacles(screen, obstacles):
+    """Draw obstacles with their assigned dimensions and images."""
+    for x, y, width, height, image in obstacles:
+        screen.blit(pygame.transform.scale(image, (width, height)), (x, y))
 
 def draw_enemies(screen, enemies, enemy_size, enemy_image):
     """Draw all enemies using the enemy image."""

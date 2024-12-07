@@ -1,28 +1,42 @@
+import heapq
 import random
 import pygame
-import heapq
 
-def generate_building_obstacles(count, tile_size, spacing, window_width, window_height, edge_buffer):
-    """Generate obstacles."""
+def generate_building_obstacles(count, tile_size, spacing, window_width, window_height, edge_buffer, building_images):
+    """Generate building obstacles with random images and dimensions."""
     obstacles = []
-    grid_width = (window_width - 2 * edge_buffer) // spacing
-    grid_height = (window_height - 2 * edge_buffer) // spacing
 
     for _ in range(count):
-        grid_x = random.randint(0, grid_width - 1)
-        grid_y = random.randint(0, grid_height - 1)
-        x = edge_buffer + grid_x * spacing
-        y = edge_buffer + grid_y * spacing
-        obstacles.append((x, y))
+        while True:
+            # Randomly position the obstacle
+            x = random.randint(edge_buffer, window_width - edge_buffer - tile_size)
+            y = random.randint(edge_buffer, window_height - edge_buffer - tile_size)
+
+            # Assign a random image
+            image = random.choice(building_images)
+
+            # Determine size based on the chosen skin
+            if image == building_images[0]:  # Example: First skin becomes a rectangle
+                width, height = tile_size, tile_size * 1.5  # Rectangular dimensions
+            else:
+                width, height = tile_size, tile_size  # Default square
+
+            # Check if this obstacle overlaps any existing obstacles
+            rect = pygame.Rect(x, y, width, height)
+            if not any(rect.colliderect(pygame.Rect(ox, oy, ow, oh)) for ox, oy, ow, oh, _ in obstacles):
+                obstacles.append((x, y, width, height, image))
+                break
+
     return obstacles
 
-def is_on_building(rect, obstacles, tile_size):
-    """Check if a given rect collides with any obstacles."""
-    for ox, oy in obstacles:
-        obstacle_rect = pygame.Rect(ox, oy, tile_size, tile_size)
-        if rect.colliderect(obstacle_rect):
+def is_on_building(player_rect, obstacles, _):
+    """Check if the player is on any building."""
+    for ox, oy, width, height, _ in obstacles:
+        building_rect = pygame.Rect(ox, oy, width, height)
+        if player_rect.colliderect(building_rect):
             return True
     return False
+
 
 def get_valid_starting_position(obstacles, player_size, window_width, window_height, edge_buffer, tile_size):
     """Generate a valid starting position for the player."""
@@ -50,51 +64,81 @@ def generate_door_position_on_edge(obstacles, window_width, window_height, door_
         if not is_on_building(door_rect, obstacles, tile_size):
             return [x, y]
 
-def ensure_path(player_pos, door_pos, obstacles, tile_size, window_width, window_height, player_size):
-    """Ensure there's a valid path between the player and the door."""
-    while not a_star_path(player_pos, door_pos, obstacles, tile_size, window_width // tile_size, window_height // tile_size):
-        obstacles = generate_building_obstacles(len(obstacles), tile_size, tile_size + 20, window_width, window_height, 100)
-        player_pos = get_valid_starting_position(obstacles, player_size, window_width, window_height, 100, tile_size)
+def ensure_path(player_pos, door_pos, obstacles, tile_size, window_width, window_height, player_size, building_images):
+    """Ensure there is a valid path between the player and the door."""
+    player_rect = pygame.Rect(player_pos[0], player_pos[1], player_size, player_size)
+    door_rect = pygame.Rect(door_pos[0], door_pos[1], player_size, player_size)
+
+    # Regenerate obstacles until there is a clear path between player and door
+    while True:
+        valid_path = True
+        for obstacle in obstacles:
+            ox, oy, width, height, _ = obstacle
+            obstacle_rect = pygame.Rect(ox, oy, width, height)
+            if player_rect.colliderect(obstacle_rect) or door_rect.colliderect(obstacle_rect):
+                valid_path = False
+                break
+        if valid_path:
+            break
+        obstacles = generate_building_obstacles(
+            len(obstacles), tile_size, tile_size + 20, window_width, window_height, 100, building_images
+        )
+
     return obstacles
 
-def generate_enemy_positions(obstacles, count, enemy_size, window_width, window_height, edge_buffer, tile_size):
-    """Generate random enemy positions avoiding obstacles, with random speeds and health."""
+
+
+def generate_enemy_positions(obstacles, enemy_count, enemy_size, window_width, window_height, edge_buffer, tile_size, enemy_health):
+    """Generate initial enemy positions avoiding obstacles."""
     enemies = []
-    for _ in range(count):
+
+    for _ in range(enemy_count):
         while True:
             x = random.randint(edge_buffer, window_width - edge_buffer - enemy_size)
             y = random.randint(edge_buffer, window_height - edge_buffer - enemy_size)
+
             enemy_rect = pygame.Rect(x, y, enemy_size, enemy_size)
-            if not is_on_building(enemy_rect, obstacles, tile_size):
-                speed = random.uniform(1, 3)  # Random speed (slower than the player)
-                health = 20  # Default health for enemies
-                enemies.append({"pos": [x, y], "speed": speed, "health": health})
+
+            # Check if the enemy overlaps with any obstacle or other enemy
+            if not any(enemy_rect.colliderect(pygame.Rect(ox, oy, ow, oh)) for ox, oy, ow, oh, _ in obstacles) and \
+               not any(enemy_rect.colliderect(pygame.Rect(enemy["pos"][0], enemy["pos"][1], enemy_size, enemy_size)) for enemy in enemies):
+                enemies.append({
+                    "pos": (x, y),
+                    "health": enemy_health,  # Set health dynamically based on room count
+                    "last_hit_time": 0,  # Initialize hit cooldown
+                    "speed": random.uniform(1.0, 3.0)  # Random speed slower than player
+                })
                 break
+
     return enemies
 
 
 def move_enemies_toward_player(enemies, player_pos, obstacles, tile_size, grid_width, grid_height):
-    """Move enemies toward the player using A* pathfinding."""
+    """Move enemies toward the player, avoiding obstacles."""
     for enemy in enemies:
-        start = (enemy["pos"][0], enemy["pos"][1])
-        goal = (player_pos[0], player_pos[1])
+        enemy_x, enemy_y = enemy["pos"]
+        player_x, player_y = player_pos
 
-        # Calculate a path to the player using A*
-        path = a_star_path(start, goal, obstacles, tile_size, grid_width, grid_height)
+        # Calculate direction vector
+        dx = player_x - enemy_x
+        dy = player_y - enemy_y
 
-        if path:
-            next_pos = path[0]
-            dx = next_pos[0] - enemy["pos"][0]
-            dy = next_pos[1] - enemy["pos"][1]
+        # Normalize direction vector to get unit step
+        distance = (dx ** 2 + dy ** 2) ** 0.5
+        if distance == 0:
+            continue  # Skip if already at the player's position
+        step_x = (dx / distance) * enemy["speed"]
+        step_y = (dy / distance) * enemy["speed"]
 
-            # Move the enemy toward the next path position
-            speed = enemy["speed"]
-            step_x = min(speed, abs(dx)) * (1 if dx > 0 else -1) if dx != 0 else 0
-            step_y = min(speed, abs(dy)) * (1 if dy > 0 else -1) if dy != 0 else 0
+        # Calculate new position
+        new_x = enemy_x + step_x
+        new_y = enemy_y + step_y
 
-            # Update enemy position
-            enemy["pos"][0] += step_x
-            enemy["pos"][1] += step_y
+        # Check for collisions with obstacles
+        enemy_rect = pygame.Rect(new_x, new_y, tile_size, tile_size)
+        if not any(enemy_rect.colliderect(pygame.Rect(ox, oy, ow, oh)) for ox, oy, ow, oh, _ in obstacles):
+            enemy["pos"] = (new_x, new_y)  # Update position as a new tuple
+
 
 
 
