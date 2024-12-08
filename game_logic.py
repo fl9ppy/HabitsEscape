@@ -98,7 +98,7 @@ def ensure_path(player_pos, door_pos, obstacles, tile_size, window_width, window
 
 
 
-def generate_enemy_positions(obstacles, enemy_count, enemy_size, window_width, window_height, edge_buffer, tile_size, enemy_health):
+def generate_enemy_positions(obstacles, enemy_count, enemy_size, window_width, window_height, edge_buffer, tile_size, enemy_health, enemy_level_multiplier):
     """Generate initial enemy positions avoiding obstacles."""
     enemies = []
 
@@ -116,7 +116,7 @@ def generate_enemy_positions(obstacles, enemy_count, enemy_size, window_width, w
                     "pos": (x, y),
                     "health": enemy_health,  # Set health dynamically based on room count
                     "last_hit_time": 0,  # Initialize hit cooldown
-                    "speed": random.uniform(1.0, 3.0)  # Random speed slower than player
+                    "speed": random.uniform(1.0, 3.0) * enemy_level_multiplier  # Random speed slower than player
                 })
                 break
 

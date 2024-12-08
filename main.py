@@ -52,8 +52,10 @@ def main():
 
     # Load images
     background_image = pygame.image.load("assets/background.jpg")
-    player_image = pygame.image.load("assets/raul.png")
+    player_image1 = pygame.image.load("assets/modi_mers_dreapra.png")  # Primary idle skin
+    player_image2 = pygame.image.load("assets/modi_mers_stanga.png")
     player_image_hit = pygame.image.load("assets/raulsabie.png")
+    player_image_idle = pygame.image.load("assets/ial2.png")
     enemy_image = pygame.image.load("assets/beer.png")
     enemy_image_hit = pygame.image.load("assets/beer_hit.png")
     door_image1 = pygame.image.load("assets/portaljos.png")
@@ -65,14 +67,20 @@ def main():
     ]
 
     # Create mirrored versions of the player images
-    player_image_mirror = pygame.transform.flip(player_image, True, False)
+    player_image1_mirror = pygame.transform.flip(player_image1, True, False)
+    player_image2_mirror = pygame.transform.flip(player_image2, True, False)
     player_image_mirror_hit = pygame.transform.flip(player_image_hit, True, False)
+    player_image_idle_mirror = pygame.transform.flip(player_image_idle, True, False)
 
     # Scale images
     background_image = pygame.transform.scale(background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))
-    player_image = pygame.transform.scale(player_image, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image1 = pygame.transform.scale(player_image1, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image2 = pygame.transform.scale(player_image2, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image_idle = pygame.transform.scale(player_image_idle, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     player_image_hit = pygame.transform.scale(player_image_hit, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
-    player_image_mirror = pygame.transform.scale(player_image_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image1_mirror = pygame.transform.scale(player_image1_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image2_mirror = pygame.transform.scale(player_image2_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image_idle_mirror = pygame.transform.scale(player_image_idle_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     player_image_mirror_hit = pygame.transform.scale(player_image_mirror_hit, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     enemy_image = pygame.transform.scale(enemy_image, (ENEMY_SIZE, ENEMY_SIZE))
     enemy_image_hit = pygame.transform.scale(enemy_image_hit, (ENEMY_SIZE, ENEMY_SIZE))
@@ -84,13 +92,19 @@ def main():
     high_score = load_high_score(ROOM_COUNT_FILE)
 
     clock = pygame.time.Clock()
-    move_speed = 7
+
     running = True
+
+    player_skin_toggle = True  # Toggle state for player skin
+    last_player_skin_toggle_time = pygame.time.get_ticks()
+    last_input_time = pygame.time.get_ticks()
+    idle_threshold = 5000
 
     door_image_toggle = True  # Toggle state
     last_toggle_time = pygame.time.get_ticks()
 
     player_level_multiplier = 2
+    move_speed = 7 * player_level_multiplier
     player_health = 100 * player_level_multiplier
     player_damage = 50 * player_level_multiplier
     last_damage_time = 0
@@ -100,13 +114,14 @@ def main():
     obstacles = generate_building_obstacles(
         OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images
     )
+    enemy_level_multiplier = 1
     player_pos = get_valid_starting_position(obstacles, PLAYER_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE)
     player_rect = pygame.Rect(player_pos[0], player_pos[1], PLAYER_SIZE, PLAYER_SIZE)
     door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, DOOR_SIZE, EDGE_BUFFER, TILE_SIZE)
     enemies = generate_enemy_positions(
-        obstacles, ENEMY_COUNT, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE, 100  # Initial health
+        obstacles, ENEMY_COUNT, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE, 100, enemy_level_multiplier  # Initial health
     )
-    enemy_level_multiplier = 1
+
     obstacles = ensure_path(player_pos, door_pos, obstacles, TILE_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE, building_images)
 
     while running:
@@ -118,6 +133,23 @@ def main():
         new_player_pos = player_pos[:]
 
         current_time = pygame.time.get_ticks()
+        idle = current_time - last_input_time > idle_threshold  # Check for idle state
+
+        if keys[pygame.K_LEFT] or keys[pygame.K_RIGHT] or keys[pygame.K_UP] or keys[pygame.K_DOWN]:
+            last_input_time = current_time
+
+        if current_time - last_player_skin_toggle_time >= 500:  # Toggle every 0.5 seconds
+            player_skin_toggle = not player_skin_toggle
+            last_player_skin_toggle_time = current_time
+
+        # Player skin toggle logic
+        if current_time - last_player_skin_toggle_time >= 500:  # Toggle every 0.5 seconds
+            player_skin_toggle = not player_skin_toggle
+            last_player_skin_toggle_time = current_time
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
         # Door skin toggle logic
         if current_time - last_toggle_time >= 1000:  # Toggle every 1 second
@@ -193,9 +225,6 @@ def main():
             scaled_enemy_count = ENEMY_COUNT + (room_count // 3)  # Increase enemies every 3 rooms
             scaled_enemy_health = 100 * enemy_level_multiplier   # Increase health by 10 per room
 
-            print(f"Entering Room {room_count}")
-            print(f"Enemy Count: {scaled_enemy_count}, Enemy Health: {scaled_enemy_health}")
-
             # Regenerate the room
             obstacles = generate_building_obstacles(
                 OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images
@@ -204,7 +233,7 @@ def main():
             player_rect = pygame.Rect(player_pos[0], player_pos[1], PLAYER_SIZE, PLAYER_SIZE)
             door_pos = generate_door_position_on_edge(obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, DOOR_SIZE, EDGE_BUFFER, TILE_SIZE)
             enemies = generate_enemy_positions(
-                obstacles, scaled_enemy_count, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE, scaled_enemy_health
+                obstacles, scaled_enemy_count, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE, scaled_enemy_health, enemy_level_multiplier
             )
             obstacles = ensure_path(player_pos, door_pos, obstacles, TILE_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE, building_images)
 
@@ -216,18 +245,31 @@ def main():
                 screen.blit(enemy_image_hit, (enemy["pos"][0], enemy["pos"][1]))  # Hitting skin
             else:
                 screen.blit(enemy_image, (enemy["pos"][0], enemy["pos"][1]))  # Normal skin
-        if current_time - player_last_hit_time <= HIT_ANIMATION_DURATION:
-            # Render hitting skin
+        if idle:
+            # Render special idle skin
             if player_facing == "left":
-                screen.blit(player_image_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                screen.blit(player_image_idle, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
             else:
-                screen.blit(player_image_mirror_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                screen.blit(player_image_idle_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
         else:
-            # Render idle skin
-            if player_facing == "left":
-                screen.blit(player_image, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+            if current_time - player_last_hit_time <= HIT_ANIMATION_DURATION:
+                if player_facing == "left":
+                    screen.blit(player_image_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                else:
+                    screen.blit(player_image_mirror_hit, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
             else:
-                screen.blit(player_image_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                # Render idle skin
+                if player_facing == "left":
+                    if player_skin_toggle:
+                        screen.blit(player_image1, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                    else:
+                        screen.blit(player_image2, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                else:
+                    if player_skin_toggle:
+                        screen.blit(player_image1_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+                    else:
+                        screen.blit(player_image2_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
+
         if not enemies:
             if door_image_toggle:
                 screen.blit(door_image1, (door_pos[0], door_pos[1]))
