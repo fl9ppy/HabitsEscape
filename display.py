@@ -1,12 +1,13 @@
 import pygame
 from game_logic import restart_game
+import os
 
 TEXT_COLOR = (255, 255, 255)
 TEXT_SHADOW_COLOR = (0, 0, 0)
 
 def load_health_bar_assets():
     """Load the health bar background image."""
-    health_bar_base = pygame.image.load("assets/health_bar_background.png")
+    health_bar_base = pygame.image.load("assets/others/health_bar_background.png")
     scaled_health_bar = pygame.transform.scale(health_bar_base, (280, 80))
     return scaled_health_bar
 
@@ -55,7 +56,7 @@ def display_sign(screen, room_count, high_score, font, sign_image, position):
 
 def load_font():
     """Load the 8-bit font."""
-    return pygame.font.Font("assets/8bit_font.ttf", 20)  # Adjust font size as needed
+    return pygame.font.Font("assets/others/8bit_font.ttf", 20)  # Adjust font size as needed
 
 def draw_obstacles(screen, obstacles):
     """Draw obstacles with their assigned dimensions and images."""
@@ -178,7 +179,9 @@ def show_death_screen(screen, font, sign_image, window_width, window_height, PLA
 
 
                 elif button2_rect.collidepoint(event.pos):
-                    print("Button 2 pressed (functionality TBD)")
+                    os.system("python home.py")
+                    pygame.quit()
+                    exit()
 
         clock.tick(30)
 

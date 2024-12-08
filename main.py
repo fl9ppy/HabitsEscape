@@ -15,11 +15,11 @@ WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 800
 PLAYER_SIZE = 50
 ENEMY_SIZE = 50
-TILE_SIZE = 125
+TILE_SIZE = 115
 DOOR_SIZE = 100
-SPACING = 200
+SPACING = 250
 OBSTACLE_COUNT = 8
-EDGE_BUFFER = 100
+EDGE_BUFFER = 150
 ENEMY_COUNT = 5
 PLAYER_HEALTH = 100
 ROOM_COUNT_FILE = "room_count.txt"
@@ -27,6 +27,16 @@ DAMAGE_COOLDOWN = 1000  # Milliseconds
 HIT_ANIMATION_DURATION = 200  # Duration for player hit animation in milliseconds
 
 HEALTH_COLOR = (255, 255, 255)
+
+def load_addiction_data(file_path):
+    """Loads addiction data from a file and returns the addiction type."""
+    try:
+        with open(file_path, "r") as file:
+            data = file.readlines()
+            addiction_data = {line.split(":")[0].strip(): line.split(":")[1].strip() for line in data}
+            return addiction_data.get("Addiction", "Default")
+    except FileNotFoundError:
+        return "Default"  # Fallback if file doesn't exist
 
 def load_high_score(file_path):
     try:
@@ -47,23 +57,23 @@ def main():
     pygame.display.set_caption("Room Counter Game")
     font = load_font()
     health_bar_base = load_health_bar_assets()
-    sign_image = pygame.image.load("assets/sign.png")
+    sign_image = pygame.image.load("assets/others/sign.png")
     sign_image = pygame.transform.scale(sign_image, (200, 150))
 
     # Load images
-    background_image = pygame.image.load("assets/background.jpg")
-    player_image1 = pygame.image.load("assets/modi_mers_dreapra.png")  # Primary idle skin
-    player_image2 = pygame.image.load("assets/modi_mers_stanga.png")
-    player_image_hit = pygame.image.load("assets/raulsabie.png")
-    player_image_idle = pygame.image.load("assets/ial2.png")
-    enemy_image = pygame.image.load("assets/beer.png")
-    enemy_image_hit = pygame.image.load("assets/beer_hit.png")
-    door_image1 = pygame.image.load("assets/portaljos.png")
-    door_image2 = pygame.image.load("assets/portalsus.png")
+    background_image = pygame.image.load("assets/scene/better_background.png")
+    player_image1 = pygame.image.load("assets/modi/modi_mers_dreapra.png")  # Primary idle skin
+    player_image2 = pygame.image.load("assets/modi/modi_mers_stanga.png")
+    player_image_hit = pygame.image.load("assets/modi/raulsabie.png")
+    player_image_idle = pygame.image.load("assets/modi/ial2.png")
+    enemy_image = pygame.image.load("assets/enemies/beer.png")
+    enemy_image_hit = pygame.image.load("assets/enemies/beer_hit.png")
+    door_image1 = pygame.image.load("assets/others/portaljos.png")
+    door_image2 = pygame.image.load("assets/others/portalsus.png")
     building_images = [
-        pygame.image.load("assets/building1.png"),
-        pygame.image.load("assets/building2.png"),
-        pygame.image.load("assets/building3.png")
+        pygame.image.load("assets/others/building1.png"),
+        pygame.image.load("assets/others/building2.png"),
+        pygame.image.load("assets/others/building3.png")
     ]
 
     # Create mirrored versions of the player images
@@ -103,7 +113,7 @@ def main():
     door_image_toggle = True  # Toggle state
     last_toggle_time = pygame.time.get_ticks()
 
-    player_level_multiplier = 2
+    player_level_multiplier = 1
     move_speed = 7 * player_level_multiplier
     player_health = 100 * player_level_multiplier
     player_damage = 50 * player_level_multiplier
@@ -211,7 +221,7 @@ def main():
         if player_health <= 0:
             # Call death screen and reset game
             updated_state = show_death_screen(
-                screen, font, pygame.image.load("assets/death_menu.png"), WINDOW_WIDTH, WINDOW_HEIGHT,
+                screen, font, pygame.image.load("assets/others/death_menu.png"), WINDOW_WIDTH, WINDOW_HEIGHT,
                 PLAYER_HEALTH, DOOR_SIZE, PLAYER_SIZE, OBSTACLE_COUNT, TILE_SIZE, SPACING,
                 WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images, ENEMY_COUNT, ENEMY_SIZE
             )
