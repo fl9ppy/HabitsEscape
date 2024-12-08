@@ -2,32 +2,6 @@ import heapq
 import random
 import pygame
 
-def check_collision_with_enemies(player_pos, enemies, player_size, enemy_size, damage_cooldown, last_damage_time):
-    """
-    Checks if the player collides with any enemy and applies damage if applicable.
-
-    Args:
-        player_pos (list): The player's [x, y] position.
-        enemies (list): List of enemy dictionaries with their positions and stats.
-        player_size (int): The size of the player's collision box.
-        damage_cooldown (int): Time in milliseconds before damage can be applied again.
-        last_damage_time (int): The last time damage was applied.
-
-    Returns:
-        int: The amount of damage dealt to the player (if any).
-    """
-    player_rect = pygame.Rect(player_pos[0], player_pos[1], player_size, player_size)
-    current_time = pygame.time.get_ticks()
-
-    for enemy in enemies:
-        enemy_rect = pygame.Rect(enemy["pos"][0], enemy["pos"][1], enemy_size, enemy_size)
-        if player_rect.colliderect(enemy_rect):
-            if current_time - last_damage_time > damage_cooldown:
-                enemy_damage = 10  # Adjust based on enemy strength
-                return enemy_damage
-
-    return 0  # No damage if no collisions occurred
-
 def generate_building_obstacles(count, tile_size, spacing, window_width, window_height, edge_buffer, building_images):
     """Generate building obstacles with random images and dimensions."""
     obstacles = []
@@ -75,6 +49,10 @@ def get_valid_starting_position(obstacles, player_size, window_width, window_hei
 
 def generate_door_position_on_edge(obstacles, window_width, window_height, door_size, edge_buffer, tile_size):
     """Generate a valid door position on the edge of the screen."""
+    # Define restricted areas (health bar and sign positions)
+    health_bar_area = pygame.Rect(10, 10, 280, 80)  # Adjust based on actual health bar position and size
+    sign_area = pygame.Rect(5, window_height - 145, 200, 150)  # Adjust based on actual sign position and size
+
     while True:
         edge = random.choice(["top", "bottom", "left", "right"])
         if edge == "top":
@@ -87,7 +65,13 @@ def generate_door_position_on_edge(obstacles, window_width, window_height, door_
             x, y = window_width - door_size, random.randint(edge_buffer, window_height - edge_buffer - door_size)
 
         door_rect = pygame.Rect(x, y, door_size, door_size)
-        if not is_on_building(door_rect, obstacles, tile_size):
+
+        # Ensure the door does not overlap restricted areas or obstacles
+        if (
+            not any(door_rect.colliderect(pygame.Rect(ox, oy, ow, oh)) for ox, oy, ow, oh, _ in obstacles)
+            and not door_rect.colliderect(health_bar_area)
+            and not door_rect.colliderect(sign_area)
+        ):
             return [x, y]
 
 def ensure_path(player_pos, door_pos, obstacles, tile_size, window_width, window_height, player_size, building_images):

@@ -9,7 +9,7 @@ def load_health_bar_assets():
     scaled_health_bar = pygame.transform.scale(health_bar_base, (280, 80))
     return scaled_health_bar
 
-def display_health_bar(screen, health, max_health, health_bar_base, position):
+def display_health_bar(screen, health, max_health, health_bar_base, position, player_level):
     """Display the health bar with the red fill behind the bar."""
     # Calculate health percentage
     health_percentage = max(health / max_health, 0)  # Ensure no negative scaling
@@ -21,7 +21,7 @@ def display_health_bar(screen, health, max_health, health_bar_base, position):
     # Define padding and rectangle dimensions
     padding_x = 35  # Adjust as needed
     padding_y = 13  # Adjust as needed
-    fill_width = int(bar_width * health_percentage)  # Scale the red fill
+    fill_width = int((bar_width * health_percentage) / player_level)  # Scale the red fill
     fill_height = bar_height  # Match the bar's height
     fill_position = (position[0] + padding_x, position[1] + padding_y)
 

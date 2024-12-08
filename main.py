@@ -17,8 +17,8 @@ PLAYER_SIZE = 50
 ENEMY_SIZE = 50
 TILE_SIZE = 125
 DOOR_SIZE = 100
-SPACING = 150
-OBSTACLE_COUNT = 12
+SPACING = 200
+OBSTACLE_COUNT = 8
 EDGE_BUFFER = 100
 ENEMY_COUNT = 5
 PLAYER_HEALTH = 100
@@ -41,10 +41,6 @@ def save_high_score(file_path, high_score):
     with open(file_path, "w") as file:
         file.write(f"0 {high_score}")
 
-def display_health(screen, health, font):
-    health_text = font.render(f"Health: {health}", True, HEALTH_COLOR)
-    screen.blit(health_text, (10, 50))
-
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -60,7 +56,8 @@ def main():
     player_image_hit = pygame.image.load("assets/raulsabie.png")
     enemy_image = pygame.image.load("assets/beer.png")
     enemy_image_hit = pygame.image.load("assets/beer_hit.png")
-    door_image = pygame.image.load("assets/cigs.png")
+    door_image1 = pygame.image.load("assets/portaljos.png")
+    door_image2 = pygame.image.load("assets/portalsus.png")
     building_images = [
         pygame.image.load("assets/building1.png"),
         pygame.image.load("assets/building2.png"),
@@ -79,7 +76,8 @@ def main():
     player_image_mirror_hit = pygame.transform.scale(player_image_mirror_hit, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     enemy_image = pygame.transform.scale(enemy_image, (ENEMY_SIZE, ENEMY_SIZE))
     enemy_image_hit = pygame.transform.scale(enemy_image_hit, (ENEMY_SIZE, ENEMY_SIZE))
-    door_image = pygame.transform.scale(door_image, (DOOR_SIZE, DOOR_SIZE))
+    door_image1 = pygame.transform.scale(door_image1, (DOOR_SIZE, DOOR_SIZE))
+    door_image2 = pygame.transform.scale(door_image2, (DOOR_SIZE, DOOR_SIZE))
     building_images = [pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE)) for img in building_images]
 
     room_count = 0
@@ -89,7 +87,10 @@ def main():
     move_speed = 7
     running = True
 
-    player_level_multiplier = 1
+    door_image_toggle = True  # Toggle state
+    last_toggle_time = pygame.time.get_ticks()
+
+    player_level_multiplier = 2
     player_health = 100 * player_level_multiplier
     player_damage = 50 * player_level_multiplier
     last_damage_time = 0
@@ -115,6 +116,17 @@ def main():
 
         keys = pygame.key.get_pressed()
         new_player_pos = player_pos[:]
+
+        current_time = pygame.time.get_ticks()
+
+        # Door skin toggle logic
+        if current_time - last_toggle_time >= 1000:  # Toggle every 1 second
+            door_image_toggle = not door_image_toggle
+            last_toggle_time = current_time
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
         # Player movement logic
         if keys[pygame.K_LEFT]:
@@ -154,7 +166,6 @@ def main():
         )
 
         # Check for enemy collisions and apply damage
-        current_time = pygame.time.get_ticks()
         for enemy in enemies:
             enemy_rect = pygame.Rect(enemy["pos"][0], enemy["pos"][1], ENEMY_SIZE, ENEMY_SIZE)
             if player_rect.colliderect(enemy_rect):
@@ -163,7 +174,6 @@ def main():
                     player_health -= scaled_enemy_damage
                     last_damage_time = current_time
                     enemy["last_hit_time"] = current_time  # Update last hit time
-                    print(f"Enemy hit! Damage dealt: {scaled_enemy_damage}, Player Health: {player_health}")
 
         # Check for game over
         if player_health <= 0:
@@ -219,8 +229,11 @@ def main():
             else:
                 screen.blit(player_image_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
         if not enemies:
-            screen.blit(door_image, (door_pos[0], door_pos[1]))  # Door image
-        display_health_bar(screen, player_health, PLAYER_HEALTH, health_bar_base, (10, 10))
+            if door_image_toggle:
+                screen.blit(door_image1, (door_pos[0], door_pos[1]))
+            else:
+                screen.blit(door_image2, (door_pos[0], door_pos[1]))
+        display_health_bar(screen, player_health, PLAYER_HEALTH, health_bar_base, (10, 10), player_level_multiplier)
         display_sign(screen, room_count, high_score, font, sign_image, (5, WINDOW_HEIGHT - 145))
         pygame.display.flip()
         clock.tick(30)
