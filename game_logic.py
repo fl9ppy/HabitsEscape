@@ -2,6 +2,32 @@ import heapq
 import random
 import pygame
 
+def check_collision_with_enemies(player_pos, enemies, player_size, enemy_size, damage_cooldown, last_damage_time):
+    """
+    Checks if the player collides with any enemy and applies damage if applicable.
+
+    Args:
+        player_pos (list): The player's [x, y] position.
+        enemies (list): List of enemy dictionaries with their positions and stats.
+        player_size (int): The size of the player's collision box.
+        damage_cooldown (int): Time in milliseconds before damage can be applied again.
+        last_damage_time (int): The last time damage was applied.
+
+    Returns:
+        int: The amount of damage dealt to the player (if any).
+    """
+    player_rect = pygame.Rect(player_pos[0], player_pos[1], player_size, player_size)
+    current_time = pygame.time.get_ticks()
+
+    for enemy in enemies:
+        enemy_rect = pygame.Rect(enemy["pos"][0], enemy["pos"][1], enemy_size, enemy_size)
+        if player_rect.colliderect(enemy_rect):
+            if current_time - last_damage_time > damage_cooldown:
+                enemy_damage = 10  # Adjust based on enemy strength
+                return enemy_damage
+
+    return 0  # No damage if no collisions occurred
+
 def generate_building_obstacles(count, tile_size, spacing, window_width, window_height, edge_buffer, building_images):
     """Generate building obstacles with random images and dimensions."""
     obstacles = []

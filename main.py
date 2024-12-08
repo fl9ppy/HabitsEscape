@@ -7,7 +7,8 @@ from game_logic import (
     move_enemies_toward_player,
     ensure_path,
 )
-from display import draw_obstacles, display_room_count, display_high_score
+from display import load_health_bar_assets, display_health_bar, draw_obstacles, display_room_count, display_high_score, \
+    display_health, load_font, display_sign
 
 # Constants
 WINDOW_WIDTH = 1200
@@ -48,7 +49,10 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("Room Counter Game")
-    font = pygame.font.Font(None, 36)
+    font = load_font()
+    health_bar_base = load_health_bar_assets()
+    sign_image = pygame.image.load("assets/sign.png")
+    sign_image = pygame.transform.scale(sign_image, (200, 150))
 
     # Load images
     background_image = pygame.image.load("assets/background.jpg")
@@ -216,9 +220,8 @@ def main():
                 screen.blit(player_image_mirror, (player_pos[0] - PLAYER_SIZE, player_pos[1] - PLAYER_SIZE))
         if not enemies:
             screen.blit(door_image, (door_pos[0], door_pos[1]))  # Door image
-        display_health(screen, player_health, font)
-        display_room_count(screen, room_count, font)
-        display_high_score(screen, high_score, font)
+        display_health_bar(screen, player_health, PLAYER_HEALTH, health_bar_base, (10, 10))
+        display_sign(screen, room_count, high_score, font, sign_image, (5, WINDOW_HEIGHT - 145))
         pygame.display.flip()
         clock.tick(30)
 
