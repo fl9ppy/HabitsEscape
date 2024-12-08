@@ -22,6 +22,45 @@ TEXT_BUBBLE_IMAGE = "assets/others/text_bubble.png"  # Text bubble PNG path
 CUSTOM_FONT_PATH = "assets/others/8bit_font.ttf"  # Path to the custom font
 TEXT_COLOR = (0, 0, 0)
 
+def load_player_skins(addiction):
+    """
+    Load player skins based on the addiction type.
+    """
+    if addiction == "Smoking":
+        skins = {
+            "idle": "assets/voli/runcan_idle.png",
+            "move_right": "assets/voli/vali_mers_dreapta.png",
+            "move_left": "assets/voli/vali_mers_stanga.png",
+        }
+    else:  # Default for Drinking or other addictions
+        skins = {
+            "idle": "assets/modi/ial2.png",
+            "move_right": "assets/modi/modi_mers_dreapra.png",
+            "move_left": "assets/modi/modi_mers_stanga.png",
+        }
+
+    try:
+        return {
+            "idle": pygame.image.load(skins["idle"]),
+            "move_right": pygame.image.load(skins["move_right"]),
+            "move_left": pygame.image.load(skins["move_left"]),
+        }
+    except pygame.error as e:
+        print(f"Error loading player skins: {e}")
+        raise
+
+def get_addiction_from_data(file_path="player_data.txt"):
+    """
+    Reads the Addiction field from player_data.txt.
+    """
+    try:
+        with open(file_path, "r") as file:
+            data = file.readlines()
+            player_data = {line.split(":")[0].strip(): line.split(":")[1].strip() for line in data}
+            return player_data.get("Addiction", "Default")
+    except FileNotFoundError:
+        return "Default"  # Default addiction if the file is missing
+
 def draw_text_bubble(screen, text, position, size1, size2, delta1, delta2):
     """Draws a text bubble using a PNG image and renders multiline text on it."""
     # Load the text bubble PNG
@@ -53,8 +92,6 @@ def main():
     background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
     background_image = pygame.transform.scale(background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))
     portal_frames = [pygame.transform.scale(pygame.image.load(img), (PORTAL_SIZE, PORTAL_SIZE)) for img in PORTAL_IMAGES]
-    player_move_frames = [pygame.transform.scale(pygame.image.load(img), (PLAYER_SIZE, PLAYER_SIZE)) for img in PLAYER_MOVE_IMAGES]
-    player_idle_image = pygame.transform.scale(pygame.image.load(PLAYER_IDLE_IMAGE), (PLAYER_SIZE, PLAYER_SIZE))
     new_character_image = pygame.transform.scale(pygame.image.load(NEW_CHARACTER_IMAGE_PATH), NEW_CHARACTER_SIZE)
 
     # Positions and hitboxes
@@ -62,6 +99,19 @@ def main():
     portal_hitbox_rect = pygame.Rect(PORTAL_POS[0] + 50, PORTAL_POS[1] + 50, PORTAL_HITBOX[0], PORTAL_HITBOX[1])
     computer_hitbox_rect = pygame.Rect(COMPUTER_POS[0] - 25, COMPUTER_POS[1] - 25, COMPUTER_HITBOX[0], COMPUTER_HITBOX[1])
     new_character_hitbox_rect = pygame.Rect(NEW_CHARACTER_POS[0], NEW_CHARACTER_POS[1], NEW_CHARACTER_SIZE[0], NEW_CHARACTER_SIZE[1])
+
+    # Load addiction type
+    addiction = get_addiction_from_data()
+
+    # Load player skins based on addiction
+    player_skins = load_player_skins(addiction)
+
+    # Scale player skins
+    player_idle_image = pygame.transform.scale(player_skins["idle"], (PLAYER_SIZE, PLAYER_SIZE))
+    player_move_frames = [
+        pygame.transform.scale(player_skins["move_right"], (PLAYER_SIZE, PLAYER_SIZE)),
+        pygame.transform.scale(player_skins["move_left"], (PLAYER_SIZE, PLAYER_SIZE)),
+    ]
 
     # Animation and state variables
     portal_animation_index = 0
@@ -122,7 +172,6 @@ def main():
         screen.blit(portal_frames[portal_animation_index], (PORTAL_POS[0], PORTAL_POS[1]))
         screen.blit(new_character_image, NEW_CHARACTER_POS)
 
-        # Render the player with animation and flipping
         if moving:
             player_image = player_move_frames[player_animation_index]
         else:

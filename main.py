@@ -28,6 +28,76 @@ HIT_ANIMATION_DURATION = 200  # Duration for player hit animation in millisecond
 
 HEALTH_COLOR = (255, 255, 255)
 
+def get_amount_from_data(file_path="player_data.txt"):
+    """Reads the Amount value from player_data.txt."""
+    try:
+        with open(file_path, "r") as file:
+            data = file.readlines()
+            player_data = {line.split(":")[0].strip(): line.split(":")[1].strip() for line in data}
+            return int(player_data.get("Amount", 0))  # Default to 0 if not found
+    except (FileNotFoundError, ValueError):
+        return 0  # Default to 0 on error
+
+def get_addiction_from_data(file_path="player_data.txt"):
+    """
+    Reads the Addiction field from player_data.txt.
+    """
+    try:
+        with open(file_path, "r") as file:
+            data = file.readlines()
+            player_data = {line.split(":")[0].strip(): line.split(":")[1].strip() for line in data}
+            return player_data.get("Addiction", "Default")
+    except FileNotFoundError:
+        return "Default"
+
+def load_enemy_skin(addiction, base_path="assets/enemies/"):
+    """
+    Load enemy skin based on the addiction type.
+    """
+    addiction_skins = {
+        "Smoking": f"{base_path}cigs.png",
+        "Drinking": f"{base_path}beer.png",
+        "Default": f"{base_path}beer.png"
+    }
+
+    skin_path = addiction_skins.get(addiction, addiction_skins["Default"])
+    try:
+        return pygame.image.load(skin_path)
+    except pygame.error:
+        print(f"Error: Could not load skin for addiction '{addiction}'. Falling back to default.")
+        return pygame.image.load(addiction_skins["Default"])
+
+def load_player_skins(addiction, base_path="assets/player/"):
+    """
+    Load player skins based on the addiction type.
+    """
+    if addiction == "Smoking":
+        skins = {
+            "idle": "assets/voli/runcan_idle.png",
+            "move_right": "assets/voli/vali_mers_dreapta.png",
+            "move_left": "assets/voli/vali_mers_stanga.png",
+            "attack": "assets/voli/valentinsabie.png"
+        }
+    else:  # Default to Drinking or other addictions
+        skins = {
+            "idle": "assets/modi/ial2.png",
+            "move_right": "assets/modi/modi_mers_dreapra.png",
+            "move_left": "assets/modi/modi_mers_stanga.png",
+            "attack": "assets/modi/raulsabie.png"
+        }
+
+    try:
+        return {
+            "idle": pygame.image.load(skins["idle"]),
+            "move_right": pygame.image.load(skins["move_right"]),
+            "move_left": pygame.image.load(skins["move_left"]),
+            "attack": pygame.image.load(skins["attack"]),
+        }
+    except pygame.error as e:
+        print(f"Error loading player skins: {e}")
+        raise
+
+
 def load_addiction_data(file_path):
     """Loads addiction data from a file and returns the addiction type."""
     try:
@@ -60,14 +130,9 @@ def main():
     sign_image = pygame.image.load("assets/others/sign.png")
     sign_image = pygame.transform.scale(sign_image, (200, 150))
 
+    addiction = get_addiction_from_data()
     # Load images
     background_image = pygame.image.load("assets/scene/better_background.png")
-    player_image1 = pygame.image.load("assets/modi/modi_mers_dreapra.png")  # Primary idle skin
-    player_image2 = pygame.image.load("assets/modi/modi_mers_stanga.png")
-    player_image_hit = pygame.image.load("assets/modi/raulsabie.png")
-    player_image_idle = pygame.image.load("assets/modi/ial2.png")
-    enemy_image = pygame.image.load("assets/enemies/beer.png")
-    enemy_image_hit = pygame.image.load("assets/enemies/beer_hit.png")
     door_image1 = pygame.image.load("assets/others/portaljos.png")
     door_image2 = pygame.image.load("assets/others/portalsus.png")
     building_images = [
@@ -76,11 +141,24 @@ def main():
         pygame.image.load("assets/others/building3.png")
     ]
 
+    # Load addiction type
+    addiction = get_addiction_from_data()
+
+    # Load player skins based on addiction
+    player_skins = load_player_skins(addiction)
+
+    # Scale skins as needed
+    player_image_idle = pygame.transform.scale(player_skins["idle"], (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image1 = pygame.transform.scale(player_skins["move_right"], (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image2 = pygame.transform.scale(player_skins["move_left"], (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+    player_image_hit = pygame.transform.scale(player_skins["attack"], (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
+
     # Create mirrored versions of the player images
     player_image1_mirror = pygame.transform.flip(player_image1, True, False)
     player_image2_mirror = pygame.transform.flip(player_image2, True, False)
     player_image_mirror_hit = pygame.transform.flip(player_image_hit, True, False)
     player_image_idle_mirror = pygame.transform.flip(player_image_idle, True, False)
+
 
     # Scale images
     background_image = pygame.transform.scale(background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -92,8 +170,8 @@ def main():
     player_image2_mirror = pygame.transform.scale(player_image2_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     player_image_idle_mirror = pygame.transform.scale(player_image_idle_mirror, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
     player_image_mirror_hit = pygame.transform.scale(player_image_mirror_hit, (PLAYER_SIZE * 2, PLAYER_SIZE * 2))
-    enemy_image = pygame.transform.scale(enemy_image, (ENEMY_SIZE, ENEMY_SIZE))
-    enemy_image_hit = pygame.transform.scale(enemy_image_hit, (ENEMY_SIZE, ENEMY_SIZE))
+    enemy_image = pygame.transform.scale(load_enemy_skin(addiction), (ENEMY_SIZE, ENEMY_SIZE))
+    enemy_image_hit = pygame.transform.scale(enemy_image, (ENEMY_SIZE, ENEMY_SIZE))
     door_image1 = pygame.transform.scale(door_image1, (DOOR_SIZE, DOOR_SIZE))
     door_image2 = pygame.transform.scale(door_image2, (DOOR_SIZE, DOOR_SIZE))
     building_images = [pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE)) for img in building_images]
@@ -113,7 +191,11 @@ def main():
     door_image_toggle = True  # Toggle state
     last_toggle_time = pygame.time.get_ticks()
 
-    player_level_multiplier = 1
+    value = get_amount_from_data()
+    if(value == 0):
+        player_level_multiplier = 2
+    else:
+        player_level_multiplier = 1 / value + 1
     move_speed = 7 * player_level_multiplier
     player_health = 100 * player_level_multiplier
     player_damage = 50 * player_level_multiplier
@@ -192,8 +274,10 @@ def main():
         if is_attacking and pygame.time.get_ticks() - player_last_hit_time > HIT_ANIMATION_DURATION:
             player_last_hit_time = pygame.time.get_ticks()  # Record the time of the attack
             attack_range = pygame.Rect(
-                player_pos[0] - 20, player_pos[1] - 20,
-                PLAYER_SIZE + 40, PLAYER_SIZE + 40
+                player_pos[0] - 30,  # Expand left
+                player_pos[1] - 30,  # Expand upward
+                PLAYER_SIZE + 60,  # Expand width
+                PLAYER_SIZE + 60  # Expand height
             )
             for enemy in enemies[:]:
                 enemy_rect = pygame.Rect(enemy["pos"][0], enemy["pos"][1], ENEMY_SIZE, ENEMY_SIZE)
@@ -262,9 +346,10 @@ def main():
         draw_obstacles(screen, obstacles)
         for enemy in enemies:
             if current_time - enemy["last_hit_time"] <= DAMAGE_COOLDOWN:
-                screen.blit(enemy_image_hit, (enemy["pos"][0], enemy["pos"][1]))  # Hitting skin
+                screen.blit(enemy_image_hit, (enemy["pos"][0], enemy["pos"][1]))  # Display hit skin
             else:
-                screen.blit(enemy_image, (enemy["pos"][0], enemy["pos"][1]))  # Normal skin
+                screen.blit(enemy_image, (enemy["pos"][0], enemy["pos"][1]))
+
         if idle:
             # Render special idle skin
             if player_facing == "left":
