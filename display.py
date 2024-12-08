@@ -1,4 +1,5 @@
 import pygame
+from game_logic import restart_game
 
 TEXT_COLOR = (255, 255, 255)
 TEXT_SHADOW_COLOR = (0, 0, 0)
@@ -90,3 +91,97 @@ def display_high_score(screen, high_score, font):
 def display_health(screen, health, font):
     """Display the player health with a shadow."""
     render_text_with_shadow(screen, f"Health: {health}", font, TEXT_COLOR, TEXT_SHADOW_COLOR, (10, 50))
+
+def blur_surface(surface, amount):
+    """Applies a blur effect to the given surface."""
+    scale = max(1, int(amount))
+    small_surface = pygame.transform.scale(surface,
+                   (surface.get_width() // scale, surface.get_height() // scale))
+    return pygame.transform.scale(small_surface, surface.get_size())
+
+
+
+def show_death_screen(screen, font, sign_image, window_width, window_height, PLAYER_HEALTH, DOOR_SIZE, PLAYER_SIZE,
+                      OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images,
+                      ENEMY_COUNT, ENEMY_SIZE):
+    """
+    Displays the death screen and handles restart logic.
+    """
+    running = True
+    clock = pygame.time.Clock()
+
+    # Center the sign
+    sign_rect = sign_image.get_rect(center=(window_width // 2, window_height // 2))
+
+    # Calculate the button positions relative to the sign
+    button_width = 150
+    button_height = 50
+    button_spacing = 20  # Space between buttons
+
+    button1_rect = pygame.Rect(
+        sign_rect.centerx - button_width // 2,
+        sign_rect.bottom - button_height * 2 - 100,  # Positioned above the bottom edge
+        button_width,
+        button_height,
+    )
+
+    button2_rect = pygame.Rect(
+        sign_rect.centerx - button_width // 2,
+        sign_rect.bottom - button_height - 90,  # Just above the bottom edge
+        button_width,
+        button_height,
+    )
+
+    # Blur background
+    blurred_bg = blur_surface(screen.copy(), 10)
+
+    while running:
+        # Render the blurred background
+        screen.blit(blurred_bg, (0, 0))
+
+        # Draw the sign
+        screen.blit(sign_image, sign_rect.topleft)
+
+        # Draw "Game Over" text
+        game_over_text = font.render("GAME OVER", True, (0, 0, 0))
+        game_over_rect = game_over_text.get_rect(center=(sign_rect.centerx, sign_rect.top + 30))
+        screen.blit(game_over_text, game_over_rect)
+
+        # Draw buttons
+        pygame.draw.rect(screen, (255, 0, 0), button1_rect)  # Restart button
+        pygame.draw.rect(screen, (0, 255, 0), button2_rect)  # Button 2
+
+        # Draw button text
+        button1_text = font.render("Restart", True, (255, 255, 255))
+        button1_text_rect = button1_text.get_rect(center=button1_rect.center)
+        screen.blit(button1_text, button1_text_rect)
+
+        button2_text = font.render("Home", True, (255, 255, 255))
+        button2_text_rect = button2_text.get_rect(center=button2_rect.center)
+        screen.blit(button2_text, button2_text_rect)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button1_rect.collidepoint(event.pos):
+                    # Call restart_game and get the updated state
+                    updated_state = restart_game(
+                        WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_HEALTH, DOOR_SIZE, PLAYER_SIZE,
+                        OBSTACLE_COUNT, TILE_SIZE, SPACING, EDGE_BUFFER, ENEMY_COUNT, ENEMY_SIZE, building_images
+                    )
+                    return updated_state  # Return to main loop
+
+
+                elif button2_rect.collidepoint(event.pos):
+                    print("Button 2 pressed (functionality TBD)")
+
+        clock.tick(30)
+
+    # Once the loop exits, return control to the main game
+    return
+

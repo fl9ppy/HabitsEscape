@@ -2,6 +2,8 @@ import heapq
 import random
 import pygame
 
+global room_count, player_health, enemies, obstacles, door_pos, player_pos, enemy_level_multiplier
+
 def generate_building_obstacles(count, tile_size, spacing, window_width, window_height, edge_buffer, building_images):
     """Generate building obstacles with random images and dimensions."""
     obstacles = []
@@ -96,6 +98,47 @@ def ensure_path(player_pos, door_pos, obstacles, tile_size, window_width, window
 
     return obstacles
 
+def restart_game(WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_HEALTH, DOOR_SIZE, PLAYER_SIZE,
+                 OBSTACLE_COUNT, TILE_SIZE, SPACING, EDGE_BUFFER, ENEMY_COUNT, ENEMY_SIZE, building_images):
+    """
+    Reset the game to its initial state, regenerating level, enemies, and player position.
+    """
+    # Reset room count and player health
+    room_count = 0
+    player_health = PLAYER_HEALTH
+
+    # Reset enemy level multiplier
+    enemy_level_multiplier = 1
+
+    # Regenerate room obstacles
+    obstacles = generate_building_obstacles(
+        OBSTACLE_COUNT, TILE_SIZE, SPACING, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images
+    )
+
+    # Reset player position
+    player_pos = get_valid_starting_position(
+        obstacles, PLAYER_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, TILE_SIZE
+    )
+
+    # Generate a new door position
+    door_pos = generate_door_position_on_edge(
+        obstacles, WINDOW_WIDTH, WINDOW_HEIGHT, DOOR_SIZE, EDGE_BUFFER, TILE_SIZE
+    )
+
+    # Generate a new set of enemies
+    enemies = generate_enemy_positions(
+        obstacles, ENEMY_COUNT, ENEMY_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT,
+        EDGE_BUFFER, TILE_SIZE, 100, enemy_level_multiplier
+    )
+
+    # Ensure a valid path between player and door
+    obstacles = ensure_path(player_pos, door_pos, obstacles, TILE_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, PLAYER_SIZE, building_images)
+
+    # Return the updated state
+    return room_count, player_health, obstacles, player_pos, door_pos, enemies, enemy_level_multiplier
+
+
+
 
 
 def generate_enemy_positions(obstacles, enemy_count, enemy_size, window_width, window_height, edge_buffer, tile_size, enemy_health, enemy_level_multiplier):
@@ -121,7 +164,6 @@ def generate_enemy_positions(obstacles, enemy_count, enemy_size, window_width, w
                 break
 
     return enemies
-
 
 def move_enemies_toward_player(enemies, player_pos, obstacles, tile_size, grid_width, grid_height):
     """Move enemies toward the player, avoiding obstacles."""

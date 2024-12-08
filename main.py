@@ -8,7 +8,7 @@ from game_logic import (
     ensure_path,
 )
 from display import load_health_bar_assets, display_health_bar, draw_obstacles, display_room_count, display_high_score, \
-    display_health, load_font, display_sign
+    display_health, load_font, display_sign, show_death_screen
 
 # Constants
 WINDOW_WIDTH = 1200
@@ -209,10 +209,20 @@ def main():
 
         # Check for game over
         if player_health <= 0:
-            print("Game Over!")
-            running = False
+            # Call death screen and reset game
+            updated_state = show_death_screen(
+                screen, font, pygame.image.load("assets/death_menu.png"), WINDOW_WIDTH, WINDOW_HEIGHT,
+                PLAYER_HEALTH, DOOR_SIZE, PLAYER_SIZE, OBSTACLE_COUNT, TILE_SIZE, SPACING,
+                WINDOW_WIDTH, WINDOW_HEIGHT, EDGE_BUFFER, building_images, ENEMY_COUNT, ENEMY_SIZE
+            )
 
-        # Door collision and room transition
+            # Unpack the updated state
+            room_count, player_health, obstacles, player_pos, door_pos, enemies, enemy_level_multiplier = updated_state
+
+            print("Game restarted, resuming with reset state.")
+            continue
+
+            # Door collision and room transition
         door_rect = pygame.Rect(door_pos[0], door_pos[1], DOOR_SIZE, DOOR_SIZE)
         if player_rect.colliderect(door_rect) and not enemies:
             room_count += 1
