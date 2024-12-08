@@ -33,3 +33,30 @@ if __name__ == "__main__":
     aha2 = AHA1()
     AHA4(aha1, aha2)
     print("Ai luat-o in gura >~<")
+
+'''
+                                                                                                              
+                                                                                                              
+    ffffffffffffffff  lllllll     999999999                                                                   
+   f::::::::::::::::f l:::::l   99:::::::::99                                                                 
+  f::::::::::::::::::fl:::::l 99:::::::::::::99                                                               
+  f::::::fffffff:::::fl:::::l9::::::99999::::::9                                                              
+  f:::::f       ffffff l::::l9:::::9     9:::::9ppppp   ppppppppp   ppppp   pppppppppyyyyyyy           yyyyyyy
+  f:::::f              l::::l9:::::9     9:::::9p::::ppp:::::::::p  p::::ppp:::::::::py:::::y         y:::::y 
+ f:::::::ffffff        l::::l 9:::::99999::::::9p:::::::::::::::::p p:::::::::::::::::py:::::y       y:::::y  
+ f::::::::::::f        l::::l  99::::::::::::::9pp::::::ppppp::::::ppp::::::ppppp::::::py:::::y     y:::::y   
+ f::::::::::::f        l::::l    99999::::::::9  p:::::p     p:::::p p:::::p     p:::::p y:::::y   y:::::y    
+ f:::::::ffffff        l::::l         9::::::9   p:::::p     p:::::p p:::::p     p:::::p  y:::::y y:::::y     
+  f:::::f              l::::l        9::::::9    p:::::p     p:::::p p:::::p     p:::::p   y:::::y:::::y      
+  f:::::f              l::::l       9::::::9     p:::::p    p::::::p p:::::p    p::::::p    y:::::::::y       
+ f:::::::f            l::::::l     9::::::9      p:::::ppppp:::::::p p:::::ppppp:::::::p     y:::::::y        
+ f:::::::f            l::::::l    9::::::9       p::::::::::::::::p  p::::::::::::::::p       y:::::y         
+ f:::::::f            l::::::l   9::::::9        p::::::::::::::pp   p::::::::::::::pp       y:::::y          
+ fffffffff            llllllll  99999999         p::::::pppppppp     p::::::pppppppp        y:::::y           
+                                                 p:::::p             p:::::p               y:::::y            
+                                                 p:::::p             p:::::p              y:::::y             
+                                                p:::::::p           p:::::::p            y:::::y              
+                                                p:::::::p           p:::::::p           y:::::y               
+                                                p:::::::p           p:::::::p          yyyyyyy                
+                                                ppppppppp           ppppppppp                                                                                                                                              
+'''
